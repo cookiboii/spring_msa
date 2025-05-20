@@ -1,34 +1,25 @@
+pipeline {
+    agent any
 
+    stages {
 
-pipeline{
-   agent any
-
-
-   stages{
-
-        stage('pull codes from github'){
-              steps{
-
-                 checkout scm //젠킨스와 연결된 소스 컨트롤 매니저 에서 코드를 가져오는 명령어
-
-
-              }
-
-        }
-        stages('build codes by  gradle'){
-             steps{
-
-              script{
-
-               sh """
-                 eho "build stage start"
-
-                 """
-              }
-
-             }
-
+        stage('Pull code from GitHub') {
+            steps {
+                // 젠킨스와 연결된 SCM에서 코드를 가져옵니다.
+                checkout scm
+            }
         }
 
-   }
+        stage('Build code with Gradle') {
+            steps {
+                script {
+                    sh """
+                    echo "Build stage start"
+                    ./gradlew clean build
+                    """
+                }
+            }
+        }
+
+    }
 }
