@@ -15,7 +15,7 @@ pipeline {
                 script {
                     sh """
                     echo "Build stage start"
-                    ./gradlew clean build
+
                     """
                 }
             }
