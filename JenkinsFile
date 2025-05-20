@@ -1,5 +1,9 @@
 pipeline {
     agent any
+    environment{
+        SERVICE_DIRS ="config-service , discovery-service ,gateway-service ,user-service ,product-service,ordering-service"
+
+    }
 
     stages {
 
@@ -13,10 +17,21 @@ pipeline {
         stage('Build code with Gradle') {
             steps {
                 script {
-                    sh """
-                    echo "Build stage start"
+                     def serviceDirs = env.SERVICE_DIRS.split(",")
+                     serviceDirs.each{ service ->
 
-                    """
+
+                        sh   """
+                              echo "building  ${service}..."
+                              cd${service}
+                              ./gradlew clean build -x test
+                              ls -al ./build/libs
+                              cd ..
+                             """
+
+
+                     }
+
                 }
             }
         }
