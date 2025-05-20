@@ -1,15 +1,15 @@
 pipeline {
     agent any
-    environment{
-        SERVICE_DIRS ="config-service , discovery-service ,gateway-service ,user-service ,product-service,ordering-service"
 
+    environment {
+        // 공백 제거된 서비스 목록
+        SERVICE_DIRS = "config-service,discovery-service,gateway-service,user-service,product-service,ordering-service"
     }
 
     stages {
 
         stage('Pull code from GitHub') {
             steps {
-                // 젠킨스와 연결된 SCM에서 코드를 가져옵니다.
                 checkout scm
             }
         }
@@ -17,21 +17,20 @@ pipeline {
         stage('Build code with Gradle') {
             steps {
                 script {
-                     def serviceDirs = env.SERVICE_DIRS.split(",")
-                     serviceDirs.each{ service ->
+                    def serviceDirs = env.SERVICE_DIRS.split(",")
 
+                    serviceDirs.each { rawService ->
+                        def service = rawService.trim()
 
-                        sh   """
-                              echo "building  ${service}..."
-                              cd${service}
-                              ./gradlew clean build -x test
-                              ls -al ./build/libs
-                              cd ..
-                             """
-
-
-                     }
-
+                        sh """
+                            echo "🔧 Building ${service}..."
+                            cd ${service}
+                            chmod +x gradlew      # ✅ 실행 권한 부여
+                            ./gradlew clean build -x test
+                            ls -al ./build/libs
+                            cd ..
+                        """
+                    }
                 }
             }
         }
