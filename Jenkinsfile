@@ -2,10 +2,10 @@ pipeline{
 
    agent any
 
-    environment{
+  /*   environment{
 
 
-    }
+    } */
    stages{
       stage('Pull Codes from Github'){
           steps{
