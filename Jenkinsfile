@@ -19,6 +19,7 @@ pipeline {
                     serviceDirs.each { service ->
                         sh """
                             echo "Building ${service}"
+                            chmod +x ${service}/gradlew
                             cd ${service}
                             ./gradlew clean build -x test
                             ls -al ./build/libs
