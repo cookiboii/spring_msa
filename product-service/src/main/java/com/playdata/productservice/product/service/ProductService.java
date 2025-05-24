@@ -5,7 +5,10 @@ import com.playdata.productservice.product.dto.ProductResDto;
 import com.playdata.productservice.product.dto.ProductSaveReqDto;
 import com.playdata.productservice.product.dto.ProductSearchDto;
 import com.playdata.productservice.product.entity.Product;
+import com.playdata.productservice.product.entity.QProduct;
 import com.playdata.productservice.product.repository.ProductRepository;
+import com.querydsl.core.BooleanBuilder;
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,11 +17,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static com.playdata.productservice.product.entity.QProduct.product;
 
 @Service
 @RequiredArgsConstructor
@@ -28,7 +34,7 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final AwsS3Config s3Config;
-
+    private final JPAQueryFactory factory;
     public Product productCreate(ProductSaveReqDto dto) throws IOException {
 
         MultipartFile productImage = dto.getProductImage();
@@ -62,7 +68,31 @@ public class ProductService {
     }
 
     public List<ProductResDto> productList(ProductSearchDto dto, Pageable pageable) {
-        Page<Product> products;
+
+        BooleanBuilder builder = new BooleanBuilder();
+
+        if (dto.getCategory() != null) {
+            if (dto.getCategory().equals("name")){
+                builder.and(product.name.contains(dto.getSearchName()));
+            }
+            if (dto.getCategory().equals("category")){
+                builder.and(product.name.contains(dto.getSearchName()));
+            }
+        }
+
+
+        List<Product> products =   factory
+                .selectFrom(product)
+                .where(builder)
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        return products.stream()
+                .map(Product::fromEntity)
+                .collect(Collectors.toList());
+
+      /*  Page<Product> products;
         if (dto.getCategory() == null) {
             products = productRepository.findAll(pageable);
         } else if (dto.getCategory().equals("name")) {
@@ -75,7 +105,7 @@ public class ProductService {
 
         return productList.stream()
                 .map(Product::fromEntity)
-                .collect(Collectors.toList());
+                .collect(Collectors.toList());*/
     }
 
     public void productDelete(Long id) throws Exception {
