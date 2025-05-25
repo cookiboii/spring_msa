@@ -1,6 +1,6 @@
 // 자주 사용되는 필요한 변수를 전역으로 선언하는 것도 가능.
 def ecrLoginHelper = "docker-credential-ecr-login" // ECR credential helper 이름
-def deployHost = "172.31.18.125" // 배포 인스턴스의 private 주소
+
 
 // 젠킨스의 선언형 파이프라인 정의부 시작 (그루비 언어)
 pipeline {
@@ -17,17 +17,6 @@ pipeline {
                 checkout scm // 젠킨스와 연결된 소스 컨트롤 매니저(git 등)에서 코드를 가져오는 명령어
             }
         }
-
-        stage('Add Secret To config-service') {
-            steps {
-                withCredentials([file(credentialsId: 'config-secret', variable: 'configSecret')]) {
-                    script {
-                        sh 'cp $configSecret config-service/src/main/resources/application-dev.yml'
-                    }
-                }
-            }
-        }
-
         stage('Detect Changes') {
             steps {
                 script {
@@ -109,56 +98,40 @@ pipeline {
             steps {
                 script {
                     // jenkins에 저장된 credentials를 사용하여 AWS 자격증명을 설정.
-                    withAWS(region: "${REGION}", credentials: "aws-key") {
-                        def changedServices = env.CHANGED_SERVICES.split(",")
-                        changedServices.each { service ->
-                            sh """
-                            # ECR에 이미지를 push하기 위해 인증 정보를 대신 검증해 주는 도구 다운로드.
-                            # /usr/local/bin/ 경로에 해당 파일을 이동
-                            curl -O https://amazon-ecr-credential-helper-releases.s3.us-east-2.amazonaws.com/0.4.0/linux-amd64/${ecrLoginHelper}
-                            chmod +x ${ecrLoginHelper}
-                            mv ${ecrLoginHelper} /usr/local/bin/
+                    withAWS(region: "${REGION}", credentials: "aws-key")
+                    def changedServices = env.CHANGED_SERVICES.split(",")
+                    changedServices.each { service ->
+                        sh """
+                        # ECR에 이미지를 push하기 위해 인증 정보를 대신 검증해 주는 도구 다운로드.
+                        # /usr/local/bin/ 경로에 해당 파일을 이동
+                        curl -O https://amazon-ecr-credential-helper-releases.s3.us-east-2.amazonaws.com/0.4.0/linux-amd64/${ecrLoginHelper}
+                        chmod +x ${ecrLoginHelper}
+                        mv ${ecrLoginHelper} /usr/local/bin/
 
-                            # Docker에게 push 명령을 내리면 지정된 URL로 push할 수 있게 설정.
-                            # 자동으로 로그인 도구를 쓰게 설정
-                            mkdir -p ~/.docker
-                            echo '{"credHelpers": {"${ECR_URL}": "ecr-login"}}' > ~/.docker/config.json
+                        # Docker에게 push 명령을 내리면 지정된 URL로 push할 수 있게 설정.
+                        # 자동으로 로그인 도구를 쓰게 설정
+                        echo '{"credHelpers": {"${ECR_URL}": "ecr-login"}}' > ~/.docker/config.json
 
-                            docker build -t ${service}:latest ${service}
-                            docker tag ${service}:latest ${ECR_URL}/${service}:latest
-                            docker push ${ECR_URL}/${service}:latest
-                            """
-                        }
+                        docker build -t ${service}:latest ${service}
+                        docker tag ${service}:latest ${ECR_URL}/${service}:latest
+                        docker push ${ECR_URL}/${service}:latest
+                        """
+
                     }
 
-
                 }
             }
+
+
+
         }
+        stage('deploy Changed Services to AWS EC2'){
+     /*     when{
+          expression { env.CHANGED_SERVICES != "" }
+          }
+             tes
+        } */
 
-        stage('Deploy Changed Services to AWS EC2') {
-
-            steps {
-                sshagent(credentials: ["deploy-key"]) {
-                    sh """
-                    # Jenkins에서 배포 서버로 docker-compose.yml 복사 후 전송
-                    scp -o StrictHostKeyChecking=no docker-compose.yml ubuntu@${deployHost}:/home/ubuntu/docker-compose.yml
-
-                    # 배포 서버로 직접 접속 시도 (compose 돌리러 갑니다!)
-                    ssh -o StrictHostKeyChecking=no ubuntu@${deployHost} '
-                    cd /home/ubuntu && \
-
-                    # 시간이 지나 로그인 만료 시 필요한 명령
-                    aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ECR_URL} && \
-
-                    # docker compose를 이용해서 변경된 서비스만 이미지를 pull -> 일괄 실행
-                    docker-compose pull ${env.CHANGED_SERVICES} && \
-                    docker compose up -d ${env.CHANGED_SERVICES}
-                    '
-                    """
-                }
-            }
-        }
 
     }
 }
