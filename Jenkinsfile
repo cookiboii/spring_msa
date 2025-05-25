@@ -125,6 +125,17 @@ pipeline {
 
 
         }
+        stage('deploy Changed Services to AWS EC2'){
+         when{
+          expression { env.CHANGED_SERVICES != "" }
+          }
+             steps{
+
+
+
+             }
+        }
+
 
     }
 }
