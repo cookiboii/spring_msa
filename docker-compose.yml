@@ -1,6 +1,6 @@
 services:
   config-service:
-    build: ./config-service
+    image: 061039771220.dkr.ecr.ap-northeast-2.amazonaws.com/config-service
     container_name: config-service
     ports:
       - "8888:8888"
@@ -15,7 +15,7 @@ services:
       - msa-network
 
   discovery-service:
-    build: ./discovery-service
+    image: 061039771220.dkr.ecr.ap-northeast-2.amazonaws.com/discovery-service
     container_name: discovery-service
     ports:
       - "8761:8761"
@@ -33,7 +33,7 @@ services:
       - msa-network
 
   gate-service:
-    build: ./gateway-service
+    image: 061039771220.dkr.ecr.ap-northeast-2.amazonaws.com/gate-service
     container_name: gateway-service
     ports:
       - "8000:8000"
@@ -46,7 +46,7 @@ services:
       - msa-network
 
   user-service:
-    build: ./user-service
+    image: 061039771220.dkr.ecr.ap-northeast-2.amazonaws.com/user-service
     container_name: user-service
     depends_on:
       discovery-service:
@@ -58,7 +58,7 @@ services:
       - msa-network
 
   order-service:
-    build: ./ordering-service
+    image: 061039771220.dkr.ecr.ap-northeast-2.amazonaws.com/user-service
     container_name: ordering-service
     depends_on:
       discovery-service:
@@ -70,7 +70,7 @@ services:
       - msa-network
 
   product-service:
-    build: ./product-service
+    image: 061039771220.dkr.ecr.ap-northeast-2.amazonaws.com/product-service
     container_name: product-service
     depends_on:
       discovery-service:
