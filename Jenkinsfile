@@ -129,11 +129,7 @@ pipeline {
          when{
           expression { env.CHANGED_SERVICES != "" }
           }
-             steps{
-
-
-
-             }
+             echo "Deployment step will be added here."
         }
 
 
