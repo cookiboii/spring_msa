@@ -155,6 +155,15 @@ public class UserController {
         return ResponseEntity.ok().body(resDto);
     }
 
+    @PostMapping("/email-valid")
+    public ResponseEntity<?>  emailValid(@RequestBody Map<String, String> map) {
+
+        String email = map.get("email");
+             String authNum = userService.mailCheck(email);
+        return ResponseEntity.ok().body(authNum);
+    }
+
+
     // ordering-service가 회원 정보를 원할 때 이메일을 보냅니다.
     // 그 이메일을 가지고 ordering-service가 원하는 회원 정보를 리턴하는 메서드.
     @GetMapping("/findByEmail")
@@ -165,6 +174,13 @@ public class UserController {
                 = new CommonResDto(HttpStatus.OK, "이메일로 회원 조회 완료", dto);
         return ResponseEntity.ok().body(resDto);
     }
+    @PostMapping("/verify")
+    public ResponseEntity<?>verifyEamil(@RequestParam Map<String, String> map) {
+
+     Map <String,String> result   = userService.verifyEmail(map);
+       return ResponseEntity.ok().body(result);
+    }
+
 
     @GetMapping("/health-check")
     public String healthCheck() {
@@ -176,6 +192,8 @@ public class UserController {
 
         return msg;
     }
+
+
 
 
 }
